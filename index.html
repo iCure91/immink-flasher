@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immink Firmware Flasher</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f1f5f9;
+            color: #334155;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            max-width: 400px;
+        }
+        h1 {
+            color: #0f172a;
+            margin-top: 0;
+        }
+        p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        /* Das Styling für den ESP Web Tools Button */
+        esp-web-install-button {
+            --esp-tools-button-color: #0f172a;
+            --esp-tools-button-text-color: #ffffff;
+            --esp-tools-button-border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Immink Flasher</h1>
+        <p>Verbinde deinen ESP32 per USB mit dem Computer. Klicke auf den Button, wähle den seriellen Port aus und installiere die neueste Firmware inkl. Web-Setup.</p>
+        
+        <!-- Dieser Tag wird vom Skript in einen klickbaren Button verwandelt -->
+        <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+        
+        <p style="font-size: 0.8em; margin-top: 20px;"><em>Hinweis: Funktioniert am besten in Chrome oder Edge.</em></p>
+    </div>
+
+    <!-- Das magische Skript für den Browser-Flasher -->
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+
+</body>
+</html>
