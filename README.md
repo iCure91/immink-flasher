@@ -1,4 +1,5 @@
 ​🖼️ Immink Core
+
 ​Immink ist eine leichtgewichtige, Docker-basierte Steuerzentrale für smarte E-Paper Bilderrahmen.
 Das System verbindet sich mit deinem lokalen Immich-Server, bereitet Bilder perfekt für E-Ink Displays auf und nutzt lokale KI-Modelle via Ollama, um smarte Bildtitel zu generieren.
 
