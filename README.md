@@ -4,6 +4,7 @@
 Das System verbindet sich mit deinem lokalen Immich-Server, bereitet Bilder perfekt für E-Ink Displays auf und nutzt lokale KI-Modelle via Ollama, um smarte Bildtitel zu generieren.
 
 ​✨ Features
+
 ​🔌 Nahtlose Immich Integration: Zieht Bilder automatisch aus ausgewählten Alben (Standard & Priorität).
 
 ​🧠 KI-generierte Bildtitel: Nutzt lokale Vision-Modelle (wie llava:13b via Ollama), um kreative Bildunterschriften direkt auf dem Bild zu platzieren.
