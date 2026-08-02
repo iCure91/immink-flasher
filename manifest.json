@@ -1,13 +1,11 @@
 {
-  "name": "Immink E-Paper Frame",
+  "name": "Immink E-Paper Full Backup",
   "version": "1.0.0",
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "parts": [
-        { "path": "bootloader.bin", "offset": "0x1000" },
-        { "path": "partitions.bin", "offset": "0x8000" },
-        { "path": "firmware.bin", "offset": "0x10000" }
+        { "path": "immink-firmware.bin", "offset": "0x0" }
       ]
     }
   ]
