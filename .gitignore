@@ -1,0 +1,6 @@
+/data/*.json
+/data/*.txt
+/data/*.log
+/*.bin
+/*.jpg
+!/data/i18n.json
