@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Immink Firmware Flasher</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -14,7 +15,18 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            position: relative;
         }
+        .lang-flags { position: absolute; top: 20px; right: 20px; }
+        .lang-flags a { 
+            text-decoration: none; 
+            font-size: 1.5em; 
+            margin-left: 8px; 
+            transition: 0.2s; 
+            cursor: pointer;
+            opacity: 0.3;
+        }
+        
         .container {
             background-color: white;
             padding: 40px;
@@ -22,6 +34,7 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
             max-width: 400px;
+            width: 90%;
         }
         h1 {
             color: #0f172a;
@@ -30,30 +43,120 @@
         p {
             color: #64748b;
             line-height: 1.6;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
-        /* Das Styling für den ESP Web Tools Button */
         esp-web-install-button {
             --esp-tools-button-color: #0f172a;
             --esp-tools-button-text-color: #ffffff;
             --esp-tools-button-border-radius: 8px;
+            display: block;
+            margin-bottom: 12px;
+        }
+        .btn-dashboard {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #f8fafc;
+            color: #334155;
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .btn-dashboard:hover {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Immink Flasher</h1>
-        <p>Verbinde deinen ESP32 per USB mit dem Computer. Klicke auf den Button, wähle den seriellen Port aus und installiere die neueste Firmware inkl. Web-Setup.</p>
-        
-        <!-- Dieser Tag wird vom Skript in einen klickbaren Button verwandelt -->
-        <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
-        
-        <p style="font-size: 0.8em; margin-top: 20px;"><em>Hinweis: Funktioniert am besten in Chrome oder Edge.</em></p>
+    <!-- Sprachauswahl (JavaScript gesteuert) -->
+    <div class="lang-flags">
+        <a onclick="setLanguage('de')" data-lang="de" style="opacity: 1;">🇩🇪</a>
+        <a onclick="setLanguage('en')" data-lang="en">🇬🇧</a>
+        <a onclick="setLanguage('fr')" data-lang="fr">🇫🇷</a>
+        <a onclick="setLanguage('es')" data-lang="es">🇪🇸</a>
     </div>
 
-    <!-- Das magische Skript für den Browser-Flasher -->
-    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <div class="container">
+        <!-- IDs vergeben, damit JS die Texte austauschen kann -->
+        <h1 id="t-title">Immink Flasher</h1>
+        
+        <p id="t-desc">Verbinde deinen ESP32 per USB mit dem Computer. Klicke auf den Button, wähle den seriellen Port aus und installiere die neueste Firmware inkl. Web-Setup.</p>
+        
+        <esp-web-install-button manifest="manifest.json"></esp-web-install-button>
+        
+        <a href="demo.html" class="btn-dashboard" id="t-dash">
+            <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i>
+            Direkt zur Demo
+        </a>
 
+        <p style="font-size: 0.8em; margin-top: 25px; margin-bottom: 0;"><em id="t-note">Hinweis: Funktioniert am besten in Chrome oder Edge.</em></p>
+    </div>
+
+    <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+    <script>
+        lucide.createIcons();
+
+        // --- MULTILINGUAL JAVASCRIPT LOGIC ---
+        let currentLang = localStorage.getItem('immink_lang') || 'de';
+        let translations = {};
+
+        // Lade die JSON-Datei (muss auf GitHub Pages im Ordner /data/ liegen!)
+        async function loadTranslations() {
+            try {
+                // Wir gehen davon aus, dass i18n.json im Ordner 'data' liegt
+                const response = await fetch('data/i18n.json'); 
+                if (response.ok) {
+                    translations = await response.json();
+                    applyTranslations(currentLang);
+                }
+            } catch (error) {
+                console.error("Konnte Sprachdatei nicht laden:", error);
+            }
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('immink_lang', lang);
+            document.documentElement.lang = lang;
+            applyTranslations(lang);
+        }
+
+        function applyTranslations(lang) {
+            // Visuelles Update der Flaggen
+            document.querySelectorAll('.lang-flags a').forEach(el => {
+                el.style.opacity = el.getAttribute('data-lang') === lang ? '1' : '0.3';
+            });
+
+            // Fallback auf Deutsch, falls Sprache in JSON fehlt
+            const t = translations[lang] || translations['de'];
+            if (!t) return; // Wenn JSON noch nicht geladen ist
+
+            // Texte austauschen
+            document.title = t['index_title'] || 'Immink Firmware Flasher';
+            document.getElementById('t-title').innerText = t['index_title'] || 'Immink Flasher';
+            document.getElementById('t-desc').innerText = t['index_desc'] || 'Verbinde deinen ESP32 per USB...';
+            document.getElementById('t-note').innerText = t['index_note'] || 'Hinweis: Funktioniert am besten in Chrome oder Edge.';
+            
+            // Button hat ein Icon, das wir erhalten müssen
+            document.getElementById('t-dash').innerHTML = `<i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i> ${t['index_dashboard'] || 'Direkt zur Demo'}`;
+            
+            // Icons nach DOM-Manipulation neu laden
+            lucide.createIcons();
+        }
+
+        // Beim Laden der Seite direkt ausführen
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTranslations();
+        });
+    </script>
 </body>
 </html>
