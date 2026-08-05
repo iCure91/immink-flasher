@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Immink Controller (Demo)</title>
+    <meta name="theme-color" content="#f1f5f9">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Exakt das CSS aus deiner status.php */
+        :root {
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --accent: #3b82f6;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --nav-height: 70px;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: calc(var(--nav-height) + 20px); }
+        .app-container { max-width: 480px; margin: 0 auto; padding: 15px; }
+        .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px; }
+        .lang-flags a { text-decoration: none; font-size: 1.5em; margin-right: 5px; transition: 0.2s; cursor: pointer; opacity: 0.3; }
+        .btn-logout { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 6px 12px; border-radius: 20px; text-decoration: none; font-size: 0.85em; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: 0.2s; cursor: pointer; }
+        .btn-logout:hover { background: #f8fafc; color: var(--text-main); }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .img-container { position: relative; margin-bottom: 20px; text-align: center; background: var(--card-bg); padding: 8px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid var(--border-color); }
+        .img-container img { max-width: 100%; height: auto; border-radius: 10px; display: block; margin: 0 auto; }
+        .mode-badge { position: absolute; bottom: 20px; left: 20px; background: rgba(15, 23, 42, 0.7); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.8em; font-weight: 500; backdrop-filter: blur(4px); letter-spacing: 0.5px; }
+
+        .current-mode-banner { display: flex; align-items: center; justify-content: space-between; background: white; border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; user-select: none; }
+        .current-mode-banner:hover { border-color: var(--accent); }
+        
+        .details-card { background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 24px; overflow: hidden; }
+        .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border-color); font-size: 0.9em; }
+        .detail-row:last-child { border-bottom: none; }
+        .detail-label { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-weight: 500; }
+        .detail-val { font-weight: 600; color: var(--text-main); text-align: right; }
+
+        .action-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+        .btn-primary, .btn-secondary { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; border-radius: 12px; text-decoration: none; font-weight: 500; font-size: 1rem; transition: 0.2s; border: none; cursor: pointer; width: 100%; box-sizing: border-box; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        
+        .mode-toggle { display: flex; background: #e2e8f0; border-radius: 25px; padding: 4px; margin: 15px auto; max-width: 280px; }
+        .mode-toggle a { flex: 1; text-align: center; padding: 10px; border-radius: 20px; text-decoration: none; font-size: 0.9em; font-weight: 600; color: var(--text-muted); transition: 0.3s; cursor: pointer; }
+        .mode-toggle a.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+        details { background: var(--card-bg); border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); overflow: hidden; }
+        summary { font-weight: 500; padding: 16px; cursor: pointer; color: var(--text-main); outline: none; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+        summary::marker { display: none; content: ""; }
+        summary::-webkit-details-marker { display: none; }
+        details[open] summary { border-bottom: 1px solid var(--border-color); background: #f8fafc; }
+        
+        .summary-content { display: flex; align-items: center; gap: 10px; }
+        .chevron { color: var(--text-muted); transition: transform 0.3s ease; width: 20px; height: 20px; }
+        details[open] summary .chevron { transform: rotate(180deg); }
+        
+        .gallery-container { padding: 15px; max-height: 400px; overflow-y: auto; background: #f8fafc;}
+        .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; }
+        .count-badge { margin-left: auto; background: #e2e8f0; color: var(--text-muted); padding: 2px 8px; border-radius: 12px; font-size: 0.85em; font-weight: 600; }
+
+        .thumb { background: white; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; position: relative; }
+        .thumb img { width: 100%; height: 90px; object-fit: cover; display: block; }
+        .btn-select { display: block; background: var(--primary); color: white; padding: 10px 0; text-decoration: none; font-size: 0.75em; text-align: center; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+        .btn-circle { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; color: var(--text-main); background: rgba(255, 255, 255, 0.9); box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; cursor: pointer; }
+        
+        .img-container .btn-circle { width: 40px; height: 40px; }
+        .img-container .btn-circle svg { width: 20px; height: 20px; stroke-width: 2; }
+        .img-container .btn-remove { top: 15px; right: 15px; color: #dc2626; }
+        .img-container .btn-move { top: 15px; left: 15px; color: #d97706; }
+        .img-container .btn-download { bottom: 70px; left: 15px; color: var(--accent); }
+        .img-container .btn-view { bottom: 70px; right: 15px; color: var(--primary); }
+
+        .thumb .btn-circle { width: 28px; height: 28px; }
+        .thumb .btn-circle svg { width: 14px; height: 14px; stroke-width: 2.2; }
+        .thumb .btn-remove { top: 6px; right: 6px; color: #dc2626; }
+        .thumb .btn-move { top: 6px; left: 6px; color: #d97706; }
+        .thumb .btn-download { bottom: 38px; right: 6px; color: var(--accent); }
+        .thumb .btn-view { bottom: 38px; left: 6px; color: var(--primary); }
+
+        .config-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border-bottom: 1px solid var(--border-color); font-size: 0.95em; }
+        .config-row:last-child { border-bottom: none; }
+        .config-row input[type="number"], .config-row input[type="text"], .config-row input[type="password"], .config-row select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; font-size: 1em; background: #f8fafc; outline: none; }
+        .config-row.stack { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .config-row.stack input { width: 100%; text-align: left; }
+        textarea { width: 100%; box-sizing: border-box; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 10px; font-family: monospace; font-size: 0.85em; resize: vertical; background: #f8fafc; outline: none; }
+
+        .settings-group { border-radius: 0; border: none; border-bottom: 1px solid var(--border-color); margin-bottom: 0; background: transparent; }
+        .settings-group summary { padding: 15px; background: #f8fafc; font-weight: 600; color: var(--text-muted); font-size: 0.85em; text-transform: uppercase; }
+        .settings-group[open] summary { border-bottom: 1px solid var(--border-color); }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: rgba(255, 255, 255, 0.98); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 1000; }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 0.7em; font-weight: 500; padding: 10px 0; transition: 0.2s; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .nav-item.active .icon { transform: translateY(-2px); stroke-width: 2.5; }
+
+        .demo-badge { background: #e11d48; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.7em; font-weight: bold; margin-left: 10px; text-transform: uppercase; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        
+        .demo-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; font-weight: bold; z-index: 10000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body>
+
+<div id="demoToast" class="demo-toast">Aktion erfolgreich!</div>
+
+<div class="app-container">
+    
+    <div class="header-bar">
+        <div class="lang-flags">
+            <a onclick="setLanguage('de')" data-lang="de">🇩🇪</a>
+            <a onclick="setLanguage('en')" data-lang="en">🇬🇧</a>
+            <a onclick="setLanguage('fr')" data-lang="fr">🇫🇷</a>
+            <a onclick="setLanguage('es')" data-lang="es">🇪🇸</a>
+        </div>
+        <div>
+            <span class="demo-badge">LIVE DEMO</span>
+        </div>
+    </div>
+
+    <!-- ================= TAB 1: HOME ================= -->
+    <div id="tab-home" class="tab-content active">
+        <div class="img-container">
+            <a class="btn-circle btn-remove" onclick="showToast('Demo: Bild entfernt')"><i data-lucide="trash-2"></i></a>
+            <a class="btn-circle btn-move" onclick="openMoveModal()"><i data-lucide="star"></i></a>
+            <a class="btn-circle btn-download" onclick="openMediaModal()"><i data-lucide="download"></i></a>
+            <a class="btn-circle btn-view" onclick="openMediaModal()"><i data-lucide="eye"></i></a>
+            <!-- Dummy Image -->
+            <img src="https://picsum.photos/seed/immink_demo_main/600/800" alt="Vorschau">
+            <span class="mode-badge" id="previewModeBadge" data-i18n="mode_color">Farb Modus</span>
+        </div>
+
+        <div class="current-mode-banner" onclick="openModeModal()">
+            <i data-lucide="shuffle" id="modeBannerIcon"></i>
+            <div style="flex-grow: 1; text-align: center;">
+                <span style="font-size: 0.95em;"><span data-i18n="active_mode_label">Aktueller Modus:</span> <strong id="modeBannerText" data-i18n="mode_indicator_random">Zufall</strong></span>
+            </div>
+            <i data-lucide="chevron-right"></i>
+        </div>
+
+        <div class="mode-toggle">
+            <a onclick="switchPreviewMode('bw', this)" id="btnBw" data-i18n="mode_bw">Schwarz/Weiß</a>
+            <a onclick="switchPreviewMode('color', this)" id="btnColor" class="active" data-i18n="mode_color">Farbe</a>
+        </div>
+
+        <div class="action-group">
+            <a onclick="openForceModal()" class="btn-primary">
+                <i data-lucide="refresh-cw" style="width: 20px;"></i> <span data-i18n="force_new">Neues Bild generieren</span>
+            </a>
+        </div>
+
+        <div class="details-card">
+            <div class="detail-row">
+                <span class="detail-label"><i data-lucide="sun"></i> <span data-i18n="sys_status">System-Status:</span></span>
+                <span class="detail-val" data-i18n="day_mode">Tagmodus</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label"><i data-lucide="battery"></i> <span data-i18n="battery_est">Akku-Schätzung:</span></span>
+                <span class="detail-val" style="color: #059669;">85% <span style="font-weight:normal; font-size:0.85em; color:var(--text-muted);">(255/300)</span></span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label"><i data-lucide="radio"></i> <span data-i18n="last_contact">Letzter Kontakt:</span></span>
+                <span class="detail-val">Vor 2 Min.</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label"><i data-lucide="image"></i> <span data-i18n="last_pic">Letztes Bild:</span></span>
+                <span class="detail-val">14:30 Uhr</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TAB 2: GALLERY ================= -->
+    <div id="tab-gallery" class="tab-content">
+        <h2 style="margin-top: 0; padding-left: 5px; color: var(--primary);" data-i18n="albums_title">Alben</h2>
+
+        <!-- Prio Album -->
+        <details ontoggle="loadDummyAlbum('prio', 12, false)">
+            <summary>
+                <div class="summary-content"><i data-lucide="star" style="color: #d97706; width: 20px;"></i> <span data-i18n="prio_album">Priority Album</span>
+                    <span class="count-badge" id="badge-prio"><i data-lucide="loader" class="spin" style="width: 14px; height: 14px;"></i></span>
+                </div>
+                <i data-lucide="chevron-down" class="chevron"></i>
+            </summary>
+            <div class="gallery-container" id="container-prio">
+                <div style="text-align:center; padding: 40px 0;"><i data-lucide="loader" class="spin" style="width: 32px;"></i></div>
+            </div>
+        </details>
+
+        <!-- Standard Album -->
+        <details ontoggle="loadDummyAlbum('std', 48, false)">
+            <summary>
+                <div class="summary-content"><i data-lucide="images" style="color: var(--accent); width: 20px;"></i> <span data-i18n="std_album">Standard Album</span>
+                    <span class="count-badge" id="badge-std"><i data-lucide="loader" class="spin" style="width: 14px; height: 14px;"></i></span>
+                </div>
+                <i data-lucide="chevron-down" class="chevron"></i>
+            </summary>
+            <div class="gallery-container" id="container-std">
+                <div style="text-align:center; padding: 40px 0;"><i data-lucide="loader" class="spin" style="width: 32px;"></i></div>
+            </div>
+        </details>
+
+        <!-- Visitor Album -->
+        <details ontoggle="loadDummyAlbum('visitor', 8, true)">
+            <summary>
+                <div class="summary-content"><i data-lucide="users" style="color: #8b5cf6; width: 20px;"></i> <span data-i18n="visitor_title">Besuchermodus</span>
+                    <span class="count-badge" id="badge-visitor"><i data-lucide="loader" class="spin" style="width: 14px; height: 14px;"></i></span>
+                </div>
+                <i data-lucide="chevron-down" class="chevron"></i>
+            </summary>
+            <div class="gallery-container" id="container-visitor">
+                <div style="text-align:center; padding: 40px 0;"><i data-lucide="loader" class="spin" style="width: 32px;"></i></div>
+            </div>
+        </details>
+    </div>
+
+    <!-- ================= TAB 3: UPLOAD ================= -->
+    <div id="tab-upload" class="tab-content">
+        <h2 style="margin-top: 0; padding-left: 5px; color: var(--primary);" data-i18n="upload_title">Bild Hochladen</h2>
+        <div style="background: var(--card-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--border-color);">
+            <div style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 20px; text-align: center; background: #f8fafc; margin-bottom: 20px;">
+                <i data-lucide="image-plus" style="width: 32px; height: 32px; color: var(--text-muted); margin-bottom: 10px;"></i>
+                <input type="file" style="width: 100%;">
+            </div>
+            <button class="btn-primary" onclick="showToast('Demo: Upload simuliert!')"><i data-lucide="cloud-upload" style="width: 20px;"></i> <span data-i18n="upload_btn">Hochladen</span></button>
+        </div>
+    </div>
+
+    <!-- ================= TAB 4: SETTINGS ================= -->
+    <div id="tab-settings" class="tab-content">
+        <h2 style="margin-top: 0; padding-left: 5px; color: var(--primary);" data-i18n="settings">Einstellungen</h2>
+        
+        <div style="background: var(--card-bg); border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 20px; overflow: hidden;">
+            <details class="settings-group">
+                <summary><div class="summary-content"><i data-lucide="clock" style="width: 18px;"></i> <span data-i18n="times_cycles_title">Zeiten & Zyklen</span></div><i data-lucide="chevron-down" class="chevron"></i></summary>
+                <div>
+                    <div class="config-row"><span data-i18n="set_night">Nachtruhe ab</span> <input type="number" value="22" style="width: 60px;"></div>
+                    <div class="config-row"><span data-i18n="set_wake">Aufwachen um</span> <input type="number" value="5" style="width: 60px;"></div>
+                </div>
+            </details>
+            <div style="padding: 15px; border-top: 1px solid var(--border-color);">
+                <button class="btn-primary" style="width: 100%;" onclick="showToast('Demo: Einstellungen gespeichert!')"><i data-lucide="save"></i> <span data-i18n="save_btn">Speichern</span></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODALS ================= -->
+<div id="forceModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div style="background:white; padding:24px; border-radius:16px; width:85%; max-width:320px; text-align:center;">
+        <h3 style="margin-top:0; color:var(--primary);" data-i18n="force_modal_title">Bildquelle wählen</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="closeModals(); showToast('Demo: Zufallsbild generiert');" class="btn-primary"><i data-lucide="shuffle"></i> <span data-i18n="force_random">Zufall</span></button>
+            <button onclick="closeModals();" class="btn-secondary" data-i18n="modal_cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<div id="mediaModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div style="background:white; padding:24px; border-radius:16px; width:85%; max-width:320px; text-align:center;">
+        <h3 style="margin-top:0; color:var(--primary);" data-i18n="modal_title">Aktion wählen</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="closeModals(); showToast('Demo: Bild heruntergeladen');" class="btn-primary" style="background:#8b5cf6;"><i data-lucide="image"></i> <span data-i18n="modal_img">Bild</span></button>
+            <button onclick="closeModals();" class="btn-secondary" data-i18n="modal_cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<div id="moveModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div style="background:white; padding:24px; border-radius:16px; width:85%; max-width:320px; text-align:center;">
+        <h3 style="margin-top:0; color:var(--primary);" data-i18n="move_modal_title">Zielalbum wählen</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="closeModals(); showToast('Demo: Ins Standard Album verschoben');" class="btn-primary" style="background:var(--accent);" data-i18n="move_modal_std">Standard Album</button>
+            <button onclick="closeModals(); showToast('Demo: Ins Priority Album verschoben');" class="btn-primary" style="background:#d97706;" data-i18n="move_modal_prio">Priority Album</button>
+            <button onclick="closeModals();" class="btn-secondary" data-i18n="modal_cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<div id="modeModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15, 23, 42, 0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div style="background:white; padding:24px; border-radius:16px; width:85%; max-width:340px;">
+        <h3 style="margin-top:0; color:var(--primary); text-align:center;" data-i18n="stat_mode">Modus wählen</h3>
+        <select style="width: 100%; padding: 14px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+            <option>Zufällig</option>
+            <option>On This Day</option>
+            <option>Besuchermodus</option>
+        </select>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="closeModals(); showToast('Demo: Modus gespeichert');" class="btn-primary"><i data-lucide="check-circle"></i> <span data-i18n="save_btn">Speichern</span></button>
+            <button onclick="closeModals()" class="btn-secondary" data-i18n="modal_cancel">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= BOTTOM NAV ================= -->
+<div class="bottom-nav">
+    <div class="nav-item active" onclick="switchTab('tab-home', this)">
+        <i data-lucide="home" class="icon"></i><span data-i18n="nav_home">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-gallery', this)">
+        <i data-lucide="layout-grid" class="icon"></i><span data-i18n="nav_gallery">Alben</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-upload', this)">
+        <i data-lucide="upload" class="icon"></i><span data-i18n="nav_upload">Upload</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('tab-settings', this)">
+        <i data-lucide="settings" class="icon"></i><span data-i18n="nav_setup">Setup</span>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // --- SPRACH STEUERUNG (MOCKUP) ---
+    let currentLang = localStorage.getItem('immink_lang') || 'de';
+    let translations = {};
+
+    async function loadTranslations() {
+        try {
+            const response = await fetch('data/i18n.json');
+            if (response.ok) {
+                translations = await response.json();
+                applyTranslations(currentLang);
+            }
+        } catch (error) { console.error("Konnte Sprachdatei nicht laden"); }
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('immink_lang', lang);
+        applyTranslations(lang);
+    }
+
+    function applyTranslations(lang) {
+        document.querySelectorAll('.lang-flags a').forEach(el => {
+            el.style.opacity = el.getAttribute('data-lang') === lang ? '1' : '0.3';
+        });
+
+        const t = translations[lang] || translations['de'];
+        if (!t) return;
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.innerText = t[key];
+        });
+    }
+
+    // --- TAB SWITCHING ---
+    function switchTab(tabId, navElement) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        navElement.classList.add('active');
+        window.scrollTo(0, 0); 
+    }
+
+    // --- FAKE DUMMY GALLERY GENERATOR ---
+    const loadedAlbums = {};
+    
+    function loadDummyAlbum(album, count, isSmartAlbum) {
+        if (loadedAlbums[album]) return; // Nur einmal laden
+        loadedAlbums[album] = true;
+        
+        const container = document.getElementById('container-' + album);
+        const badge = document.getElementById('badge-' + album);
+        
+        // Simuliere 1 Sekunde Ladezeit (für den Loading-Spinner Effekt)
+        setTimeout(() => {
+            badge.innerText = isSmartAlbum ? '2 / ' + count : count;
+            
+            let html = '<div class="gallery">';
+            for(let i = 0; i < count; i++) {
+                const seed = album + i;
+                const isFav = isSmartAlbum && (i === 1 || i === 4); // Dummy-Favoriten setzen
+                const favColor = isFav ? '#e11d48' : '#94a3b8';
+                const favFill = isFav ? 'currentColor' : 'none';
+                
+                html += `<div class="thumb">`;
+                
+                if (isSmartAlbum) {
+                    html += `<a class="btn-circle" style="top:4px; right:4px; color:${favColor};" onclick="toggleDummyFav(this)"><i data-lucide="heart" fill="${favFill}" style="width:14px; stroke-width:2.2;"></i></a>`;
+                    html += `<a class="btn-circle" style="top:4px; left:4px; color:#d97706;" onclick="openMoveModal()"><i data-lucide="star" style="width:14px;"></i></a>`;
+                } else {
+                    html += `<a class="btn-circle btn-remove" onclick="showToast('Demo: Bild entfernt')"><i data-lucide="trash-2"></i></a>`;
+                    html += `<a class="btn-circle btn-move" onclick="openMoveModal()"><i data-lucide="folder-input"></i></a>`;
+                }
+
+                html += `<a class="btn-circle btn-download" onclick="openMediaModal()"><i data-lucide="download"></i></a>`;
+                html += `<a class="btn-circle btn-view" onclick="openMediaModal()"><i data-lucide="eye"></i></a>`;
+                
+                html += `<img src="https://picsum.photos/seed/${seed}/200/200" loading="lazy">`;
+                html += `<a class="btn-select" style="${isSmartAlbum ? 'background:#8b5cf6;' : ''}" onclick="showToast('Demo: Bild an den Rahmen gesendet!')">Senden</a>`;
+                html += `</div>`;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            lucide.createIcons();
+        }, 800);
+    }
+
+    function toggleDummyFav(element) {
+        const svg = element.querySelector('svg');
+        if (element.style.color === 'rgb(225, 29, 72)') { // Red
+            element.style.color = '#94a3b8';
+            svg.setAttribute('fill', 'none');
+        } else {
+            element.style.color = '#e11d48';
+            svg.setAttribute('fill', 'currentColor');
+        }
+    }
+
+    function switchPreviewMode(mode, el) {
+        document.querySelectorAll('.mode-toggle a').forEach(a => a.classList.remove('active'));
+        el.classList.add('active');
+        
+        const badge = document.getElementById('previewModeBadge');
+        if(mode === 'bw') {
+            badge.innerText = translations[currentLang]?.mode_bw || 'S/W Modus';
+            document.querySelector('.img-container img').style.filter = 'grayscale(100%)';
+        } else {
+            badge.innerText = translations[currentLang]?.mode_color || 'Farb Modus';
+            document.querySelector('.img-container img').style.filter = 'none';
+        }
+    }
+
+    // --- MODAL LOGIC ---
+    function openForceModal() { document.getElementById('forceModal').style.display = 'flex'; }
+    function openMediaModal() { document.getElementById('mediaModal').style.display = 'flex'; }
+    function openMoveModal() { document.getElementById('moveModal').style.display = 'flex'; }
+    function openModeModal() { document.getElementById('modeModal').style.display = 'flex'; }
+    
+    function closeModals() {
+        document.querySelectorAll('[id$="Modal"]').forEach(m => m.style.display = 'none');
+    }
+
+    // --- TOAST NOTIFICATIONS (FÜR DEMO AKTIONEN) ---
+    function showToast(msg) {
+        const toast = document.getElementById('demoToast');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTranslations);
+</script>
+
+</body>
+</html>
+
